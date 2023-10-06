@@ -1,158 +1,128 @@
 from dataclasses import dataclass
-from enum import Enum, auto
 from functools import lru_cache
 from math import ceil
+import luadata
 
 
-# An enum of the different types of ingredients
-class Ingredient(Enum):
-    iron_ore = auto()
-    copper_ore = auto()
-    stone = auto()
-    coal = auto()
-
-    iron_ingot = auto()
-    copper_ingot = auto()
-    stone_brick = auto()
-    graphite = auto()
-
-    magnet = auto()
-    magnetic_coil = auto()
-    steel = auto()
-    gear = auto()
-    circuit_board = auto()
-    electric_motor = auto()
-    electromagnetic_turbine = auto()
-
-
-class Building(Enum):
-    smelter = auto()
-    assembler = auto()
+@dataclass
+class Item:
+    id: int
+    name: str
+    complexity = -1
 
 
 @dataclass
 class Recipe:
-    inputs: dict[Ingredient, float]
-    output_type: Ingredient
-    output_amount: float
-    time: float
-    building: Building
-    additional_outputs: dict[Ingredient, float] = None
-    complexity = -1
+    """We convert everything to items per second"""
 
-    def ops(self):
-        return self.output_amount / self.time
+    id: int
+    name: str
+    inputs: dict[int, float]
+    outputs: dict[int, float]
+    type: str
 
 
-magnetic_coil_recipe = Recipe(
-    {Ingredient.copper_ingot: 1, Ingredient.magnet: 2},
-    Ingredient.magnetic_coil,
-    2,
-    1,
-    Building.assembler,
-)
-steel_recipe = Recipe(
-    {Ingredient.iron_ingot: 3}, Ingredient.steel, 1, 3, Building.smelter
-)
-gear_recipe = Recipe(
-    {Ingredient.iron_ingot: 1}, Ingredient.gear, 1, 1, Building.assembler
-)
-circuit_board_recipe = Recipe(
-    {Ingredient.copper_ingot: 1, Ingredient.iron_ingot: 2},
-    Ingredient.circuit_board,
-    2,
-    1,
-    Building.assembler,
-)
-electric_motor_recipe = Recipe(
-    {Ingredient.iron_ingot: 2, Ingredient.magnetic_coil: 1, Ingredient.gear: 1},
-    Ingredient.electric_motor,
-    1,
-    2,
-    Building.assembler,
-)
-electromagnetic_turbine_recipe = Recipe(
-    {Ingredient.electric_motor: 2, Ingredient.magnetic_coil: 2},
-    Ingredient.electromagnetic_turbine,
-    1,
-    2,
-    Building.assembler,
-)
+raw_items = luadata.read("items.lua")
 
-recipes = {
-    Ingredient.iron_ingot: Recipe(
-        {Ingredient.iron_ore: 1}, Ingredient.iron_ingot, 1, 1, Building.smelter
-    ),
-    Ingredient.copper_ingot: Recipe(
-        {Ingredient.copper_ore: 1}, Ingredient.copper_ingot, 1, 1, Building.smelter
-    ),
-    Ingredient.magnet: Recipe(
-        {Ingredient.iron_ore: 1}, Ingredient.magnet, 1, 1.5, Building.smelter
-    ),
-    Ingredient.magnetic_coil: magnetic_coil_recipe,
-    Ingredient.gear: gear_recipe,
-    Ingredient.electric_motor: electric_motor_recipe,
-    Ingredient.electromagnetic_turbine: electromagnetic_turbine_recipe,
-    Ingredient.steel: steel_recipe,
-    Ingredient.stone_brick: Recipe(
-        {Ingredient.stone: 1}, Ingredient.stone_brick, 1, 1, Building.smelter
-    ),
-    Ingredient.circuit_board: circuit_board_recipe,
-    Ingredient.graphite: Recipe(
-        {Ingredient.coal: 2}, Ingredient.graphite, 1, 2, Building.smelter
-    ),
-}
+items = [Item(id, raw["name"]) for id, raw in raw_items.items()]
+
+raw_recipes = luadata.read("recipes.lua")
+
+recipes: list[Recipe] = []
+
+for rec in raw_recipes:
+    time = float(rec["seconds"])
+    inputs = {a: b/time for a, b in zip(rec["inputs"][0::2], rec["inputs"][1::2])}
+    outputs = {a: b/time for a, b in zip(rec["outputs"][0::2], rec["outputs"][1::2])}
+    recipe = Recipe(rec["id"], rec["name"], inputs, outputs, rec["type"])
+    recipes.append(recipe)
 
 
-def get_factory(output: dict[Ingredient, int]):
-    base_resources = [ing for ing in Ingredient if ing not in recipes]
+@lru_cache
+def get_item(item_id: int) -> Item:
+    for item in items:
+        if item.id == item_id:
+            return item
+    raise ValueError(f"Item with id {item_id} not found")
 
-    @lru_cache
-    def get_complexity(ingr: Ingredient):
-        if ingr in base_resources:
-            return 0
-        recipe = recipes[ingr]
-        return 1 + max(get_complexity(i) for i in recipe.inputs)
 
-    max_complexity = 0
+@lru_cache
+def get_recipe(item_id: int) -> Recipe:
+    for rec in recipes:
+        if item_id in rec.outputs:
+            return rec
+    # return [rec for rec in recipes if item_id in rec.outputs]
 
-    for ingr, rec in recipes.items():
-        com = get_complexity(ingr)
-        max_complexity = max(max_complexity, com)
-        rec.complexity = com
 
-    required_ingredients: dict[Ingredient, float] = {ingr: 0 for ingr in recipes}
-    required_ingredients.update({base: 0 for base in base_resources})
+@lru_cache
+def get_complexity(item_id: Item):
+    rec = get_recipe(item_id)
+    if rec is None:
+        return 0    
+    return 1 + max(get_complexity(i) for i in rec.inputs)
 
-    for ingr, amount in output.items():
-        required_ingredients[ingr] += amount
 
-    required_machines: dict[Ingredient, int] = {}
+for item in items:
+    item.complexity = get_complexity(item.id)
 
-    for com in range(max_complexity, -1, -1):
-        for ingr, rec in recipes.items():
-            if rec.complexity != com:
+max_complexity = max(item.complexity for item in items)
+
+
+def get_factory(output: dict[int, float]):
+
+    required_ingredients: dict[int, float] = {item.id: 0 for item in items}
+    for item_id, amount in output.items():
+        required_ingredients[item_id] += amount
+
+    required_machines: dict[int, int] = {}
+
+    for com in range(max_complexity, 0, -1):
+        for item in items:
+            if item.complexity != com:
                 continue
 
-            number = ceil(required_ingredients[ingr] / rec.ops())
-            if number > 0:
-                required_machines[ingr] = number
+            rec = get_recipe(item.id)
 
-            for inp in rec.inputs:
-                amount = rec.inputs[inp] / rec.time
+            number = ceil(required_ingredients[item.id] / rec.outputs[item.id])
+            if number > 0:
+                required_machines[item.id] = number
+
+            for inp, amount in rec.inputs.items():
                 required_ingredients[inp] += amount * number
 
-    for ingr, num in required_machines.items():
-        rec = recipes[ingr]
-        input = ", ".join(
-            [
-                f"{amount / rec.time * num * 60} {inp.name}"
-                for inp, amount in rec.inputs.items()
-            ]
+            for out, amount in rec.outputs.items():
+                required_ingredients[out] -= amount * number
+
+    for item_id, num in required_machines.items():
+        rec = get_recipe(item_id)
+        item = get_item(item_id)
+        input_string = ", ".join(
+            [f"{amount * num * 60} {get_item(inp).name}" for inp, amount in rec.inputs.items()]
         )
         print(
-            f"{num} {rec.building.name} creating {rec.ops() * num * 60} {rec.output_type.name} per minute from {input}"
+            f"{num} {rec.type.lower()} creating {rec.outputs[item_id] * num * 60} {item.name} per minute from {input_string}"
         )
 
+    for item_id, amount in required_ingredients.items():
+        item = get_item(item_id)
+        if amount > 0 and item.complexity > 0:
+            raise ValueError(f'Items are missing')
+        if amount < 0:
+            rec = get_recipe(item_id)
+            if -amount > rec.outputs[item_id]:
+                print("Unnecessary production of:")
+            print(f"{get_item(item_id)} excess of {-amount}")
 
-get_factory({Ingredient.electromagnetic_turbine: 0.1})
+# Electormagnetic Turbine
+#get_factory({1204: 0.1})
+
+# Plasma Exciter
+#get_factory({1401: 0.1})
+
+# Prcocessor
+#get_factory({1303: 0.1})
+
+# Blue Science
+get_factory({6001: 0.75})
+
+# TODO Red Science breaks this with the double recipes stuff
