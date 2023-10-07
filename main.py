@@ -40,6 +40,7 @@ class Recipe:
 raw_items = luadata.read("items.lua")
 
 items = [Item(id, raw["name"]) for id, raw in raw_items.items()]
+items.reverse()
 
 raw_recipes = luadata.read("recipes.lua")
 
@@ -69,6 +70,11 @@ def get_recipe_from_id(rec_id: int) -> Recipe:
     raise ValueError(f"Recipe with id {rec_id} not found")
 
 
+#print(get_recipe_from_id(16).to_string(1))
+#print(get_recipe_from_id(58).to_string(1))
+#print(get_recipe_from_id(121).to_string(1))
+
+
 @lru_cache
 def get_default_recipe(item_id: int) -> Recipe:
     # Some manual overrides:
@@ -88,9 +94,9 @@ def get_default_recipe(item_id: int) -> Recipe:
 
     if len(recs) == 0:
         return None
-    #if len(recs) > 1:
-        #item = get_item(item_id)
-        #print(f"Multiple recipes found for {item.name}. Using the first one")
+    # if len(recs) > 1:
+    # item = get_item(item_id)
+    # print(f"Multiple recipes found for {item.name}. Using the first one")
     return recs[0]
 
 
@@ -104,7 +110,6 @@ def print_duplicate_recipes():
             print(f"{item.name} has multiple recipes:")
             for rec in item_recipes:
                 print(f"  {rec.to_string()}")
-
 
 
 @lru_cache
@@ -141,9 +146,32 @@ def get_factory(output: dict[int, int], provided: list[int]):
             rec = get_default_recipe(item.id)
 
             number = ceil(required_items[item.id] / rec.outputs[item.id])
-            if number > 0:
-                required_recipes[rec.id] = number
 
+            if number > 0:
+                # Exceptions for hydrogen
+                if item.id == 1120:  # Hydrogen
+                    number = ceil(number / 3)
+                    cracks = number * 2
+                    crack_rec = get_recipe_from_id(58)
+
+                    required_recipes[crack_rec.id] = cracks
+                    for inp, amount in crack_rec.inputs.items():
+                        required_items[inp] += amount * cracks
+                    for out, amount in crack_rec.outputs.items():
+                        required_items[out] -= amount * cracks
+
+                elif item.id == 1114:  # Refined Oil
+                    number = ceil(number * 2 / 3)
+                    refineries = number
+                    refinery_rec = get_recipe_from_id(121)
+
+                    required_recipes[refinery_rec.id] = refineries
+                    for inp, amount in refinery_rec.inputs.items():
+                        required_items[inp] += amount * refineries
+                    for out, amount in refinery_rec.outputs.items():
+                        required_items[out] -= amount * refineries
+
+                required_recipes[rec.id] = number
                 for inp, amount in rec.inputs.items():
                     required_items[inp] += amount * number
 
@@ -166,7 +194,7 @@ def get_factory(output: dict[int, int], provided: list[int]):
 
 
 # Electromagnetic Turbine
-# get_factory({1204: 1}, [])
+#get_factory({1204: 1}, [])
 
 # Plasma Exciter
 # get_factory({1401: 1}, [])
@@ -175,6 +203,8 @@ def get_factory(output: dict[int, int], provided: list[int]):
 # get_factory({1303: 1}, [])
 
 # Science
+#get_factory({6001: 6}, [])
+#get_factory({6002: 3}, [])
 get_factory({6003: 3}, [1106])
 
 # Solar Sail
