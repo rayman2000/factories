@@ -21,7 +21,7 @@ class Recipe:
     outputs: dict[int, float]
     type: str
 
-    def to_string(self, num: int = 1) -> str:
+    def to_string(self, num: float = 1) -> str:
         input_string = ", ".join(
             [
                 f"{round(amount * num * 60, 2)} {get_item(inp).name}"
@@ -34,7 +34,7 @@ class Recipe:
                 for out, amount in self.outputs.items()
             ]
         )
-        return f"{num} {self.type.lower()} creating {output_string} per minute from {input_string}"
+        return f"{round(num,2)} {self.type.lower()} creating {output_string} per minute from {input_string}"
 
 
 raw_items = luadata.read("items.lua")
@@ -70,9 +70,9 @@ def get_recipe_from_id(rec_id: int) -> Recipe:
     raise ValueError(f"Recipe with id {rec_id} not found")
 
 
-#print(get_recipe_from_id(16).to_string(1))
-#print(get_recipe_from_id(58).to_string(1))
-#print(get_recipe_from_id(121).to_string(1))
+# print(get_recipe_from_id(16).to_string(1))
+# print(get_recipe_from_id(58).to_string(1))
+# print(get_recipe_from_id(121).to_string(1))
 
 
 @lru_cache
@@ -126,15 +126,27 @@ for item in items:
 max_complexity = max(item.complexity for item in items)
 
 
-def get_factory(output: dict[int, int], provided: list[int]):
+def add_recipe(
+    rec: Recipe,
+    number: float,
+    required_recipes: dict[int, float],
+    required_items: dict[int, float],
+):
+    required_recipes[rec.id] = number
+    for inp, amount in rec.inputs.items():
+        required_items[inp] += amount * number
+    for out, amount in rec.outputs.items():
+        required_items[out] -= amount * number
+
+
+def get_factory(output: dict[int, float], provided: list[int], excess=True):
     required_items: dict[int, float] = {item.id: 0 for item in items}
     for item_id, amount in output.items():
         rec = get_default_recipe(item_id)
         required_items[item_id] += amount * rec.outputs[item_id]
 
-    required_recipes: dict[int, int] = {}
+    required_recipes: dict[int, float] = {}
 
-    # Do everything with default recipes
     for com in range(max_complexity, 0, -1):
         for item in items:
             if item.complexity != com:
@@ -144,41 +156,28 @@ def get_factory(output: dict[int, int], provided: list[int]):
                 continue
 
             rec = get_default_recipe(item.id)
-
-            number = ceil(required_items[item.id] / rec.outputs[item.id])
+            number = required_items[item.id] / rec.outputs[item.id]
 
             if number > 0:
-                # Exceptions for hydrogen
+                if excess:
+                    number = ceil(number)
+
+                # Exceptions for hydrogen and refined oil
                 if item.id == 1120:  # Hydrogen
                     number = ceil(number / 3)
                     cracks = number * 2
                     crack_rec = get_recipe_from_id(58)
-
-                    required_recipes[crack_rec.id] = cracks
-                    for inp, amount in crack_rec.inputs.items():
-                        required_items[inp] += amount * cracks
-                    for out, amount in crack_rec.outputs.items():
-                        required_items[out] -= amount * cracks
+                    add_recipe(crack_rec, cracks, required_recipes, required_items)
 
                 elif item.id == 1114:  # Refined Oil
                     number = ceil(number * 2 / 3)
                     refineries = number
                     refinery_rec = get_recipe_from_id(121)
+                    add_recipe(
+                        refinery_rec, refineries, required_recipes, required_items
+                    )
 
-                    required_recipes[refinery_rec.id] = refineries
-                    for inp, amount in refinery_rec.inputs.items():
-                        required_items[inp] += amount * refineries
-                    for out, amount in refinery_rec.outputs.items():
-                        required_items[out] -= amount * refineries
-
-                required_recipes[rec.id] = number
-                for inp, amount in rec.inputs.items():
-                    required_items[inp] += amount * number
-
-                for out, amount in rec.outputs.items():
-                    required_items[out] -= amount * number
-
-    # TODO Do optimisation with non-default recipes: extra hydrogen and extra refined oil...
+                add_recipe(rec, number, required_recipes, required_items)
 
     for rec_id, num in required_recipes.items():
         rec = get_recipe_from_id(rec_id)
@@ -194,7 +193,7 @@ def get_factory(output: dict[int, int], provided: list[int]):
 
 
 # Electromagnetic Turbine
-#get_factory({1204: 1}, [])
+# get_factory({1204: 1}, [])
 
 # Plasma Exciter
 # get_factory({1401: 1}, [])
@@ -203,9 +202,31 @@ def get_factory(output: dict[int, int], provided: list[int]):
 # get_factory({1303: 1}, [])
 
 # Science
-#get_factory({6001: 6}, [])
-#get_factory({6002: 3}, [])
-get_factory({6003: 3}, [1106])
+# get_factory({6001: 6}, [])
+# get_factory({6002: 3}, [])
+# get_factory({6003: 3}, [1106])
 
 # Solar Sail
 # get_factory({1501: 1}, [1301])
+
+# Basic buildings: Tesla tower, Belt, Sorter, Splitter, Miner, Assembler,
+get_factory(
+    {
+        2201: 0.1,  # Tesla Tower
+        2001: 0.1,  # Belt 1
+        2011: 0.1,  # Sorter 1
+        2020: 0.01,  # Splitter
+        2101: 0.1,  # Storage 1
+        2204: 0.1,  # Power Plant
+        2301: 0.1,  # Mining Machine
+        2302: 0.1,  # Smelter
+        2303: 0.1,  # Assembler 1
+        2307: 0.1,  # Oil Extracter
+        2308: 0.1,  # Oil Refiner
+        2309: 0.1,  # Chemical Plant
+        2313: 0.01,  # Spray Coater
+        2901: 0.1,  # Matrix Machine
+    },
+    [],
+    False,
+)
