@@ -440,7 +440,7 @@ game_recipes = {
         grid_index=1108,
         handcraft=false,
         seconds=3,
-    }--[[,{
+    },{
         id=32,
         name='Graphene (Advanced)',
         type='CHEMICAL',
@@ -452,7 +452,7 @@ game_recipes = {
         explicit=true,
         description='It will be a lot easier to produce graphene if you can find combustible ice minerals.',
         --image='graphene-lv2'
-    }]],{
+    },{
         id=33,
         name='Carbon Nanotube',
         type='CHEMICAL',
@@ -473,7 +473,7 @@ game_recipes = {
         explicit=true,
         description='Carbon nanotube can be made directly from spiniform stalagmite crystal, but this ore is extremely rare and difficult to find.',
         --image='nanotube-lv2'
-    },--[[{
+    },{
         id=115,
         name='Deuterium Fractionation',
         type='FRACTIONATE',
@@ -485,7 +485,7 @@ game_recipes = {
         explicit=true,
         description='The successful fractionation of deuterium from liquid hydrogen has greatly promoted the use of nuclear fuel.',
         --image='deuterium-formula'
-    },]]{
+    },{
         id=40,
         name='Deuterium',
         type='PARTICLE',
@@ -494,7 +494,7 @@ game_recipes = {
         grid_index=1507,
         handcraft=false,
         seconds=2.5,
-    },--[[{
+    },{
         id=74,
         name='Mass-Energy Storage',
         type='PARTICLE',
@@ -506,7 +506,7 @@ game_recipes = {
         explicit=true,
         description='Photons can be inverted into antimatter and hydrogen under the effect of super magnetic field.',
         --image='photon-formula'
-    },]]{
+    },{
         id=104,
         name='Strange Matter',
         type='PARTICLE',
