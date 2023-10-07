@@ -121,16 +121,21 @@ for item in items:
 max_complexity = max(item.complexity for item in items)
 
 
-def get_factory(output: dict[int, float]):
+def get_factory(output: dict[int, int], provided: list[int]):
     required_items: dict[int, float] = {item.id: 0 for item in items}
     for item_id, amount in output.items():
-        required_items[item_id] += amount
+        rec = get_default_recipe(item_id)
+        required_items[item_id] += amount * rec.outputs[item_id]
 
     required_recipes: dict[int, int] = {}
 
+    # Do everything with default recipes
     for com in range(max_complexity, 0, -1):
         for item in items:
             if item.complexity != com:
+                continue
+
+            if item.id in provided:
                 continue
 
             rec = get_default_recipe(item.id)
@@ -139,14 +144,13 @@ def get_factory(output: dict[int, float]):
             if number > 0:
                 required_recipes[rec.id] = number
 
-            for inp, amount in rec.inputs.items():
-                required_items[inp] += amount * number
+                for inp, amount in rec.inputs.items():
+                    required_items[inp] += amount * number
 
-            for out, amount in rec.outputs.items():
-                required_items[out] -= amount * number
+                for out, amount in rec.outputs.items():
+                    required_items[out] -= amount * number
 
-    # TODO do optimisation with non-default recipes
-
+    # TODO Do optimisation with non-default recipes: extra hydrogen and extra refined oil...
 
     for rec_id, num in required_recipes.items():
         rec = get_recipe_from_id(rec_id)
@@ -162,13 +166,16 @@ def get_factory(output: dict[int, float]):
 
 
 # Electromagnetic Turbine
-# get_factory({1204: 0.1})
+# get_factory({1204: 1}, [])
 
 # Plasma Exciter
-# get_factory({1401: 0.1})
+# get_factory({1401: 1}, [])
 
 # Prcocessor
-# get_factory({1303: 0.1})
+# get_factory({1303: 1}, [])
 
-# Blue Science
-get_factory({6002: 0.75})
+# Science
+get_factory({6003: 3}, [1106])
+
+# Solar Sail
+# get_factory({1501: 1}, [1301])
