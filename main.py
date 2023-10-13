@@ -193,23 +193,31 @@ def get_factory(output: dict[int, float], provided: list[int], excess=True):
 
 
 # Electromagnetic Turbine
-# get_factory({1204: 1}, [])
+print("\nElectromagnetic Turbine")
+get_factory({1204: 1}, [])
 
 # Plasma Exciter
-# get_factory({1401: 1}, [])
+print("\nPlasma Exciter")
+get_factory({1401: 0.5, 1111: 0.5}, [], False)
 
-# Prcocessor
-# get_factory({1303: 1}, [])
+# Processor
+print("\nProcessor")
+get_factory({1303: 1}, [])
 
 # Science
-# get_factory({6001: 6}, [])
-# get_factory({6002: 3}, [])
-# get_factory({6003: 3}, [1106])
+print("\nScience Blue")
+get_factory({6001: 6}, [])
+print("\nScience Red")
+get_factory({6002: 3}, [])
+print("\nScience Yellow")
+get_factory({6003: 3}, [1106])
 
 # Solar Sail
-# get_factory({1501: 1}, [1301])
+print("\nSolar Sail")
+get_factory({1501: 1}, [1301])
 
 # Basic buildings: Tesla tower, Belt, Sorter, Splitter, Miner, Assembler,
+print("\nBuildings")
 get_factory(
     {
         2201: 0.1,  # Tesla Tower
