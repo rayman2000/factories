@@ -24,17 +24,17 @@ class Recipe:
     def to_string(self, num: float = 1) -> str:
         input_string = ", ".join(
             [
-                f"{round(amount * num * 60, 2)} {get_item(inp).name}"
+                f"{amount * num * 60} {get_item(inp).name}"
                 for inp, amount in self.inputs.items()
             ]
         )
         output_string = ", ".join(
             [
-                f"{round(amount * num * 60, 2)} {get_item(out).name}"
+                f"{amount * num * 60} {get_item(out).name}"
                 for out, amount in self.outputs.items()
             ]
         )
-        return f"{round(num,2)} {self.type.lower()} creating {output_string} per minute from {input_string}"
+        return f"{num} {self.type.lower()} creating {output_string} per minute from {input_string}"
 
 
 raw_items = luadata.read("items.lua")
@@ -70,11 +70,6 @@ def get_recipe_from_id(rec_id: int) -> Recipe:
     raise ValueError(f"Recipe with id {rec_id} not found")
 
 
-# print(get_recipe_from_id(16).to_string(1))
-# print(get_recipe_from_id(58).to_string(1))
-# print(get_recipe_from_id(121).to_string(1))
-
-
 @lru_cache
 def get_default_recipe(item_id: int) -> Recipe:
     # Some manual overrides:
@@ -89,6 +84,15 @@ def get_default_recipe(item_id: int) -> Recipe:
 
     if item_id == 1120:  # Hydrogen
         return get_recipe_from_id(16)
+    
+    if item_id == 1105:  # Silicon
+        return get_recipe_from_id(59)
+    
+    if item_id == 1113: # Silicon Crystal
+        return get_recipe_from_id(37)
+    
+    if item_id == 1123: # Graphene
+        return get_recipe_from_id(32) 
 
     recs = [rec for rec in recipes if item_id in rec.outputs]
 
@@ -186,55 +190,93 @@ def get_factory(output: dict[int, float], provided: list[int], excess=True):
     for item_id, amount in required_items.items():
         if amount > 0:
             item = get_item(item_id)
-            print(f"Input {round(amount * 60, 2)} {item.name} ")
+            print(f"Input {amount * 60} {item.name} ")
         if amount < 0:
             item = get_item(item_id)
-            print(f"Excess {round(-amount * 60, 2)} {item.name}")
+            print(f"Excess {-amount * 60} {item.name}")
 
 
 # Electromagnetic Turbine
-print("\nElectromagnetic Turbine")
-get_factory({1204: 1}, [])
+#print("\nElectromagnetic Turbine")
+#get_factory({1204: 1}, [])
 
 # Plasma Exciter
-print("\nPlasma Exciter")
-get_factory({1401: 0.5, 1111: 0.5}, [], False)
+#print("\nPlasma Exciter")
+#get_factory({1401: 0.5, 1111: 0.5}, [], False)
 
 # Processor
-print("\nProcessor")
-get_factory({1303: 1}, [])
+#print("\nProcessor")
+#get_factory({1303: 3}, [])
+
 
 # Science
-print("\nScience Blue")
-get_factory({6001: 6}, [])
-print("\nScience Red")
-get_factory({6002: 3}, [])
-print("\nScience Yellow")
-get_factory({6003: 3}, [1106])
+#print("\nScience Blue")
+#get_factory({6001: 6}, [])
+#print("\nScience Red")
+#get_factory({6002: 3}, [])
+#print("\nScience Yellow")
+#get_factory({6003: 7}, [1106])
+#print("\nScience Purple")
+#get_factory({6004: 3.9}, [1303, 1113])
+
+# Solar Panel
+#print("\nSolar Panel")
+#get_factory({2205: 1}, [])
 
 # Solar Sail
-print("\nSolar Sail")
-get_factory({1501: 1}, [1301])
+#print("\nSolar Sail")
+#get_factory({1501: 1}, [1301])
+
+# Proliferator
+#print("\nProliferator")
+#get_factory({1142: 1}, [])
+
+#Graphene
+#print("\nGraphene")
+#get_factory({1123: 1}, [])
+
+# Titanium Alloy
+#print("\nTitanium Alloy")
+#get_factory({1107: 1}, [])
+
+
+# Solar Panels
+#print("\nSolar Panels")
+#get_factory({2206: 0.5}, [], False)
+
+#dwget_factory({1205: 0.75}, [], False)
+
+get_factory({1802: 1}, [1305, 1120, 1205], False)
+
+print("")
+
+get_factory({1503: 0.75}, [1802,1305, 1120, 1303], False)
+
+
+
 
 # Basic buildings: Tesla tower, Belt, Sorter, Splitter, Miner, Assembler,
-print("\nBuildings")
-get_factory(
-    {
-        2201: 0.1,  # Tesla Tower
-        2001: 0.1,  # Belt 1
-        2011: 0.1,  # Sorter 1
-        2020: 0.01,  # Splitter
-        2101: 0.1,  # Storage 1
-        2204: 0.1,  # Power Plant
-        2301: 0.1,  # Mining Machine
-        2302: 0.1,  # Smelter
-        2303: 0.1,  # Assembler 1
-        2307: 0.1,  # Oil Extracter
-        2308: 0.1,  # Oil Refiner
-        2309: 0.1,  # Chemical Plant
-        2313: 0.01,  # Spray Coater
-        2901: 0.1,  # Matrix Machine
-    },
-    [],
-    False,
-)
+#print("\nBuildings")
+#get_factory(
+#    {
+#        2201: 0.1,  # Tesla Tower
+#        2001: 0.1,  # Belt 1
+#        2011: 0.1,  # Sorter 1
+#        2020: 0.01,  # Splitter
+#        2101: 0.1,  # Storage 1
+#        #2204: 0.1,  # Power Plant
+#        #2301: 0.1,  # Mining Machine
+#        2302: 0.1,  # Smelter
+#        2303: 0.1,  # Assembler 1
+#        2307: 0.1,  # Oil Extracter
+#        2308: 0.1,  # Oil Refiner
+#        2309: 0.1,  # Chemical Plant
+#        #2313: 0.01,  # Spray Coater
+#        2901: 0.1,  # Matrix Machine
+#        1131: 0.1, # Foundation
+#        #5001: 0.1 , # Logistics Drone
+#    },
+#    [],
+#    False,
+#)
+#

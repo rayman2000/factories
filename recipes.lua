@@ -650,7 +650,8 @@ game_recipes = {
         grid_index=1106,
         handcraft=true,
         seconds=2,
-    },{
+    },
+    --[[{
         id=34,
         name='Silicon Ore',
         type='SMELT',
@@ -659,7 +660,7 @@ game_recipes = {
         grid_index=1403,
         handcraft=false,
         seconds=10,
-    },{
+    },--]]{
         id=37,
         name='Crystal Silicon',
         type='SMELT',
