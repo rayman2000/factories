@@ -1,6 +1,8 @@
+from calendar import SATURDAY
 from dataclasses import dataclass
 from functools import lru_cache
 from math import ceil
+import re
 from typing import Optional
 import luadata  # type: ignore
 
@@ -61,6 +63,7 @@ SOLAR_SAIL = 1501
 DYSON_SPHERE_COMPONENT = 1502
 SMALL_CARRIER_ROCKET = 1503
 DEUTERON_FUEL_ROD = 1802
+ANTIMATTER_FUEL_ROD = 1803
 BELT_1 = 2001
 BELT_2 = 2002
 BELT_3 = 2003
@@ -75,9 +78,12 @@ INTERSTELLAR_LOGISTICS_STATION = 2104
 ORBITAL_COLLECTOR = 2105
 LOGISTICS_DISTRIBUTOR = 2107
 TESLA_TOWER = 2201
+WIRELESS_TOWER = 2202
 SOLAR_PANEL = 2205
 ACCUMULATOR = 2206
 RAY_RECEIVER = 2208
+SATELLITE_SUBSTATION = 2212
+ARTIFICIAL_STAR = 2210
 MINING_MACHINE = 2301
 SMELTER = 2302
 ASSEMBLER_1 = 2303
@@ -99,6 +105,7 @@ SCIENCE_3 = 6003
 SCIENCE_4 = 6004
 SCIENCE_5 = 6005
 SCIENCE_6 = 6006
+PROLIFERATOR_3 = 1143
 
 
 @dataclass
@@ -183,6 +190,9 @@ def get_default_recipe(item_id: int) -> Optional[Recipe]:
 
     if item_id == 1123:  # Graphene
         return get_recipe_from_id(32)
+
+    if item_id == CASIMIR_CRYSTAL:
+        return get_recipe_from_id(29)
 
     recs = [rec for rec in recipes if item_id in rec.outputs]
 
@@ -288,6 +298,10 @@ def get_factory(output: dict[int, float], provided: list[int], excess=True):
             print(f"Excess {-round(amount * 60)} {item.name}")
 
 
+get_factory(
+    {SMALL_CARRIER_ROCKET: 3}, [QUANTUM_CHIP, DEUTERON_FUEL_ROD, PROCESSOR], False
+)
+
 # Electromagnetic Turbine
 # print("\nElectromagnetic Turbine")
 # get_factory({1204: 1}, [])
@@ -309,7 +323,43 @@ def get_factory(output: dict[int, float], provided: list[int], excess=True):
 # print("\nScience Yellow")
 # get_factory({6003: 7}, [1106])
 # print("\nScience Purple")
-# get_factory({6004: 3.9}, [1303, 1113])
+# get_factory(
+#    {SCIENCE_4: 10},
+#    [TITANIUM_INGOT, CHRYSTAL_SILICON, PROCESSOR, REFINED_OIL],
+# )
+
+# get_factory(
+#    {QUANTUM_CHIP: 3},
+#    [TITANIUM_INGOT, HIGH_PURITY_SILICON, IRON_INGOT, COPPER_INGOT, HYDROGEN, GLASS],
+# )
+
+# get_factory({PARTICLE_CONTAINER: 1}, [IRON_INGOT, MAGNET, COPPER_INGOT], True)
+
+# get_factory({1803: 1}, [TITANIUM_ALLOY, PARTICLE_CONTAINER, PROCESSOR], True)
+
+##get_factory(
+#    {
+#        RAY_RECEIVER: 0.1,
+#        PARTICLE_COLLIDER: 0.1,
+#        ARTIFICIAL_STAR: 0.1,
+#        SATELLITE_SUBSTATION: 0.1,
+#        ORBITAL_COLLECTOR: 0.1,
+#        WIRELESS_TOWER: 0.1,
+#        SORTER_3: 0.1,
+#        # ANTIMATTER_FUEL_ROD: 1,
+#    },
+#    [
+#        PARTICLE_CONTAINER,
+#        SUPERMAGNETIC_RING,
+#        QUANTUM_CHIP,
+#        TITANIUM_ALLOY,
+#        PROCESSOR,
+#        PHOTON_COMBINER,
+#        FRAME_MATERIAL,
+#    ],
+#    False,
+# )
+
 
 # Solar Panel
 # print("\nSolar Panel")
@@ -353,40 +403,41 @@ def get_factory(output: dict[int, float], provided: list[int], excess=True):
 # get_factory({1402: 4}, [], False)
 
 # Basic buildings: Tesla tower, Belt, Sorter, Splitter, Miner, Assembler,
-print("\nBuildings")
-get_factory(
-    output={
-        TESLA_TOWER: 0.1,
-        BELT_1: 0.1,
-        BELT_2: 0.1,
-        SORTER_1: 0.1,
-        SORTER_2: 0.1,
-        SPLITTER: 0.01,
-        STORAGE_2: 0.1,
-        LOGISTICS_DISTRIBUTOR: 0.1,
-        INTERSTELLAR_LOGISTICS_STATION: 0.01,
-        MINING_MACHINE: 0.1,
-        SMELTER: 0.1,
-        ASSEMBLER_2: 0.1,
-        OIL_EXTRACTOR: 0.01,
-        OIL_REFINER: 0.01,
-        CHEMICAL_PLANT: 0.1,
-        FOUNDATION: 0.1,
-        FRACTIONATOR: 0.01,
-        DRONE: 0.1,
-        VESSEL: 0.1,
-        BOT: 0.1,
-    },
-    provided=[
-        IRON_INGOT,
-        MAGNET,
-        COPPER_INGOT,
-        HIGH_PURITY_SILICON,
-        TITANIUM_INGOT,
-        STONE_BRICK,
-        GLASS,
-        SULFURIC_ACID,
-        GRAPHENE,
-    ],
-    excess=False,
-)
+# print("\nBuildings")
+# get_factory(
+#    output={
+#        TESLA_TOWER: 0.1,
+#        BELT_1: 0.1,
+#        BELT_2: 0.1,
+#        SORTER_1: 0.1,
+#        SORTER_2: 0.1,
+#        SPLITTER: 0.01,
+#        STORAGE_2: 0.1,
+#        LOGISTICS_DISTRIBUTOR: 0.1,
+#        INTERSTELLAR_LOGISTICS_STATION: 0.01,
+#        MINING_MACHINE: 0.1,
+#        SMELTER: 0.1,
+#        ASSEMBLER_2: 0.1,
+#        OIL_EXTRACTOR: 0.01,
+#        OIL_REFINER: 0.01,
+#        CHEMICAL_PLANT: 0.1,
+#        FOUNDATION: 0.1,
+#        FRACTIONATOR: 0.01,
+#        DRONE: 0.1,
+#        VESSEL: 0.1,
+#        BOT: 0.1,
+#    },
+#    provided=[
+#        IRON_INGOT,
+#        MAGNET,
+#        COPPER_INGOT,
+#        HIGH_PURITY_SILICON,
+#        TITANIUM_INGOT,
+#        STONE_BRICK,
+#        GLASS,
+#        SULFURIC_ACID,
+#        GRAPHENE,
+#    ],
+#    excess=False,
+# )
+#
