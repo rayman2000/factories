@@ -1,2 +1,2 @@
 # factories
-Python project for calculating stuff in factory games
+Python scripts for calculating stuff in factory games

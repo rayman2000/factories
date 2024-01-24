@@ -1,4 +1,4 @@
-data:extend(
+recs = 
 {
   {
     type = "recipe",
@@ -2831,4 +2831,3 @@ data:extend(
     result = "steam-turbine"
   }
 }
-)
