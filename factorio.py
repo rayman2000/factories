@@ -123,7 +123,7 @@ def add_recipe(
         required_items[out] -= amount
 
 
-def get_factory(output: dict[str, float], provided: list[str], excess=True):
+def get_factory(output: dict[str, float], provided: list[str] = [], excess=True):
     required_items: dict[str, float] = {item: 0 for item in items}
     for item, amount in output.items():
         rec = get_default_recipe(item)
@@ -149,6 +149,7 @@ def get_factory(output: dict[str, float], provided: list[str], excess=True):
                     number = ceil(number)
 
                 # Recursive stuff breaks here
+                    # Crack heavy and light oil if it not required
 
                 add_recipe(rec, number, required_recipes, required_items)
 
@@ -163,4 +164,5 @@ def get_factory(output: dict[str, float], provided: list[str], excess=True):
             print(f"Excess {-round(amount)} {item}")
 
 
-get_factory({"utility-science-pack": 0.25}, ["iron-plate", "copper-plate", "stone-brick", "plastic-bar", "lubricant", "sulfur"], False)
+#get_factory({"utility-science-pack": 0.25}, ["iron-plate", "copper-plate", "stone-brick", "plastic-bar", "lubricant", "sulfur"], False)
+get_factory({"sulfur": 6})

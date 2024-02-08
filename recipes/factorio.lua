@@ -138,6 +138,8 @@ recs =
     },
     result = "stack-filter-inserter"
   },
+  
+  --[[
   {
     type = "recipe",
     name = "basic-oil-processing",
@@ -158,6 +160,7 @@ recs =
     order = "a[oil-processing]-a[basic-oil-processing]",
     main_product = ""
   },
+  ]]--
 
   {
     type = "recipe",
